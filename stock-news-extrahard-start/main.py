@@ -1,27 +1,50 @@
 import requests
+import os
+import datetime
 
+yesterday = datetime.date.today() - datetime.timedelta(days=1)
+today = datetime.date.today()
 STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
 FUNCTION = ""
-symobol = STOCK
+SYMBOL = STOCK
 
+my_key = os.environ.get("POLYGON_API_KEY")
+print(my_key)
 params = {
-    "function": ""
-    "apikey":
+    "interval": "30min",
+    "symbol": SYMBOL,
+    "type": "stock",
+    "end_date": today,
+    "format": "JSON",
+    "start_date": yesterday,
+    "apikey": "f8b725ad9f264f19aa75b5fe93c0f2b3"
 }
-## STEP 1: Use https://www.alphavantage.co
+
+
+# STEP 1: Use https://www.alphavantage.co
 # When STOCK price increase/decreases by 5% between yesterday and the day before yesterday then print("Get News").
-response = requests.get('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=TSLA&apikey=demo')
+response = requests.get('https://api.twelvedata.com/time_series', params=params)
 response.raise_for_status()
-print(response.json())
-## STEP 2: Use https://newsapi.org
+values_list = response.json()['values']
+print(yesterday, today)
+
+
+def unpack_api(values):
+    for i in values:
+        print(i)
+
+
+unpack_api(values_list)
+
+# STEP 2: Use https://newsapi.org
 # Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME. 
 
-## STEP 3: Use https://www.twilio.com
+# STEP 3: Use https://www.twilio.com
 # Send a seperate message with the percentage change and each article's title and description to your phone number. 
 
 
-#Optional: Format the SMS message like this: 
+# Optional: Format the SMS message like this:
 """
 TSLA: 🔺2%
 Headline: Were Hedge Funds Right About Piling Into Tesla Inc. (TSLA)?. 
