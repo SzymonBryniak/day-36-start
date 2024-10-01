@@ -3,6 +3,7 @@ import os
 import datetime
 
 yesterday = datetime.date.today() - datetime.timedelta(days=1)
+day_before_yesterday = datetime.date.today() - datetime.timedelta(days=15)
 today = datetime.date.today()
 STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
@@ -27,13 +28,18 @@ params = {
 response = requests.get('https://api.twelvedata.com/time_series', params=params)
 response.raise_for_status()
 values_list = response.json()['values']
-print(yesterday, today)
+print(yesterday, day_before_yesterday)
 
 
 def unpack_api(values):
     for i in values:
         print(i)
 
+
+def check_variance(yesterday_low, day_before_low):
+    if yesterday_low % day_before_low > yesterday_low * 0.05:
+        print("Get News")
+    
 
 unpack_api(values_list)
 
