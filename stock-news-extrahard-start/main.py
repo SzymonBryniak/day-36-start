@@ -2,8 +2,8 @@ import requests
 import os
 import datetime
 
-yesterday = datetime.date.today() - datetime.timedelta(days=1)
-day_before_yesterday = datetime.date.today() - datetime.timedelta(days=15)
+yesterday = datetime.date.today() - datetime.timedelta(days=2)
+day_before_yesterday = datetime.date.today() - datetime.timedelta(days=2)
 today = datetime.date.today()
 STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
@@ -11,9 +11,9 @@ FUNCTION = ""
 SYMBOL = STOCK
 
 my_key = os.environ.get("POLYGON_API_KEY")
-print(my_key)
+
 params = {
-    "interval": "30min",
+    "interval": "8h",
     "symbol": SYMBOL,
     "type": "stock",
     "end_date": today,
@@ -22,13 +22,22 @@ params = {
     "apikey": "f8b725ad9f264f19aa75b5fe93c0f2b3"
 }
 
+params_news = {
+    "q": SYMBOL,
+    "pageSize": 3,
+    "from": yesterday,
+    "apiKey": "bf0d9b70bac24191a67a0d862d109172"
+}
 
 # STEP 1: Use https://www.alphavantage.co
 # When STOCK price increase/decreases by 5% between yesterday and the day before yesterday then print("Get News").
 response = requests.get('https://api.twelvedata.com/time_series', params=params)
 response.raise_for_status()
 values_list = response.json()['values']
-print(yesterday, day_before_yesterday)
+
+
+low_yes = eval(values_list[0]['low'])
+low_day_before_yes = eval(values_list[1]['low'])
 
 
 def unpack_api(values):
@@ -36,15 +45,30 @@ def unpack_api(values):
         print(i)
 
 
-def check_variance(yesterday_low, day_before_low):
-    if yesterday_low % day_before_low > yesterday_low * 0.05:
-        print("Get News")
-    
+def get_news():
+    response_news = requests.get("https://newsapi.org/v2/everything", params=params_news)
+    articles = response_news.json()['articles']
+    for i in articles:
+        print(i)
 
-unpack_api(values_list)
+
+def check_variance(yesterday_low, day_before_low):
+    if yesterday_low > day_before_low:
+        if yesterday_low % day_before_low * 0.05:
+            print("News, up by more than 5")
+            print(yesterday_low % day_before_low)
+    elif yesterday_low < day_before_low:
+        if day_before_low % yesterday_low * 0.05:
+            print(day_before_low % yesterday_low)
+            print("News, down by more than 5")
+            get_news()
+
+
+# unpack_api(values_list)
+check_variance(low_yes, low_day_before_yes)
 
 # STEP 2: Use https://newsapi.org
-# Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME. 
+# Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME.
 
 # STEP 3: Use https://www.twilio.com
 # Send a seperate message with the percentage change and each article's title and description to your phone number. 
