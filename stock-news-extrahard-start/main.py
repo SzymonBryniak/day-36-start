@@ -1,7 +1,8 @@
 import requests
-import os
 import datetime
+import os
 from twilio.rest import Client
+import smtplib
 
 yesterday = datetime.date.today() - datetime.timedelta(days=2)
 day_before_yesterday = datetime.date.today() - datetime.timedelta(days=2)
@@ -10,8 +11,10 @@ STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
 FUNCTION = ""
 SYMBOL = STOCK
-
-my_key = os.environ.get("POLYGON_API_KEY")
+password = "aruj ltqt spax soaw"
+username = "szymonbryniakproject@gmail.com"
+to_addrs = "oneplusszymonbryniak@gmail.com"
+# my_key = os.environ.get("POLYGON_API_KEY")
 
 params = {
     "interval": "8h",
@@ -73,18 +76,23 @@ check_variance(low_yes, low_day_before_yes)
 
 # STEP 3: Use https://www.twilio.com
 # Send a seperate message with the percentage change and each article's title and description to your phone number. 
-account_sid = os.environ["TWILIO_ACCOUNT_SID"]
-auth_token = os.environ["TWILIO_AUTH_TOKEN"]
-client = Client(account_sid, auth_token)
+def send_sms():  # waiting for the phone number from twilio
+    account_sid = os.environ["TWILIO_ACCOUNT_SID"]
+    auth_token = os.environ["TWILIO_AUTH_TOKEN"]
+    client = Client(account_sid, auth_token)
 
-message = client.messages.create(
-    body="Join Earth's mightiest heroes. Like Kevin Bacon.",
-    from_="+15017122661",
-    to="+15558675310",
-)
+    message = client.messages.create(
+        body="Join Earth's mightiest heroes. Like Kevin Bacon.",
+        from_="+15017122661",
+        to="+15558675310",
+    )
 
-print(message.body)
-
+    print(message.body)
+def send_email():
+    with smtplib.SMTP("smtp.gmail.com") as connection:
+        connection.starttls()
+        connection.login(user=username, password=password)
+        connection.sendmail(from_addr=username, to_addrs="oneplusszymonbryniak@gmail.com", msg=" test message")
 # Optional: Format the SMS message like this:
 """
 TSLA: 🔺2%
@@ -96,3 +104,4 @@ Headline: Were Hedge Funds Right About Piling Into Tesla Inc. (TSLA)?.
 Brief: We at Insider Monkey have gone over 821 13F filings that hedge funds and prominent investors are required to file by the SEC The 13F filings show the funds' and investors' portfolio positions as of March 31st, near the height of the coronavirus market crash.
 """
 
+send_email()
