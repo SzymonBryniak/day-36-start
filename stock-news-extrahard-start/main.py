@@ -1,13 +1,17 @@
 import requests
 import datetime
 import os
+import pandas as pd
+from pyexpat.errors import messages
 from twilio.rest import Client
 import smtplib
 
-yesterday = datetime.date.today() - datetime.timedelta(days=2)
-day_before_yesterday = datetime.date.today() - datetime.timedelta(days=2)
 today = datetime.date.today()
-STOCK = "TSLA"
+
+yesterday = datetime.date.today() - datetime.timedelta(days=2)
+day_before_yesterday = today - datetime.timedelta(days=6)
+
+STOCK = "AAPL"
 COMPANY_NAME = "Tesla Inc"
 FUNCTION = ""
 SYMBOL = STOCK
@@ -49,34 +53,65 @@ def unpack_api(values):
         print(i)
 
 
+def get_news_dataframe():
+    response_news = requests.get("https://newsapi.org/v2/everything", params=params_news)
+    articles = response_news.json()['articles']
+    titles = []
+    descriptions = []
+    for i in articles:
+        # return f'Title: {i['title']} \n\n {i['description']}'
+        titles.append([i['title']])
+        descriptions.append(i['description'])
+    message = pd.DataFrame(descriptions)
+    pd.set_option('display.max_colwidth', None)
+    # message.columns=[titles]
+    return message.encode('utf-8')
+
 def get_news():
     response_news = requests.get("https://newsapi.org/v2/everything", params=params_news)
     articles = response_news.json()['articles']
+    message = []
     for i in articles:
-        print(i)
+        # return f'Title: {i['title']} \n\n {i['description']}'
+        message.append(i['title'].encode('ascii', 'replace').decode('utf-8'))
+        message.append(i['description'].encode('ascii', 'replace').decode('utf-8'))
+    return str(message)
 
+def send_email(message):
+    with smtplib.SMTP("smtp.gmail.com") as connection:
+        connection.starttls()
+        connection.login(user=username, password=password)
+        connection.sendmail(from_addr=username, to_addrs="oneplusszymonbryniak@gmail.com", msg=str(message))
 
 def check_variance(yesterday_low, day_before_low):
     if yesterday_low > day_before_low:
-        if yesterday_low % day_before_low * 0.05:
-            print("News, up by more than 5")
+        print(yesterday_low % day_before_low, yesterday_low * 0.05)
+        if yesterday_low % day_before_low > yesterday_low * 0.05 :
+            print("News, up by more than 5", day_before_low % yesterday_low, yesterday_low * 0.05)
             print(yesterday_low % day_before_low)
+        else:
+            message = get_news()
+            print(message)
+            send_email(message='Subject: Tesla Stock News\n\n{}' .format(message))
+
     elif yesterday_low < day_before_low:
-        if day_before_low % yesterday_low * 0.05:
+        if day_before_low % yesterday_low:
             print(day_before_low % yesterday_low)
             print("News, down by more than 5")
             get_news()
+        else:
+            send_email(message=[day_before_low % yesterday_low, day_before_low * 0.05])
 
 
 # unpack_api(values_list)
 check_variance(low_yes, low_day_before_yes)
-
+unpack_api(values_list)
 # STEP 2: Use https://newsapi.org
 # Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME.
 
 # STEP 3: Use https://www.twilio.com
 # Send a seperate message with the percentage change and each article's title and description to your phone number. 
-def send_sms():  # waiting for the phone number from twilio
+def send_sms():  # unable to get the phone number from twilio ad the time of writing
     account_sid = os.environ["TWILIO_ACCOUNT_SID"]
     auth_token = os.environ["TWILIO_AUTH_TOKEN"]
     client = Client(account_sid, auth_token)
@@ -88,12 +123,10 @@ def send_sms():  # waiting for the phone number from twilio
     )
 
     print(message.body)
-def send_email():
-    with smtplib.SMTP("smtp.gmail.com") as connection:
-        connection.starttls()
-        connection.login(user=username, password=password)
-        connection.sendmail(from_addr=username, to_addrs="oneplusszymonbryniak@gmail.com", msg=" test message")
+
 # Optional: Format the SMS message like this:
+
+
 """
 TSLA: 🔺2%
 Headline: Were Hedge Funds Right About Piling Into Tesla Inc. (TSLA)?. 
@@ -104,4 +137,3 @@ Headline: Were Hedge Funds Right About Piling Into Tesla Inc. (TSLA)?.
 Brief: We at Insider Monkey have gone over 821 13F filings that hedge funds and prominent investors are required to file by the SEC The 13F filings show the funds' and investors' portfolio positions as of March 31st, near the height of the coronavirus market crash.
 """
 
-send_email()
