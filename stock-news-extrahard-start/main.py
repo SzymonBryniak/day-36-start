@@ -71,18 +71,24 @@ def get_news():
     response_news = requests.get("https://newsapi.org/v2/everything", params=params_news)
     articles = response_news.json()['articles']
     message = []
+    from_file = ''
+    if os.path.isfile("./file_to_send.txt"):
+        print(os.path.isfile("./file_to_send.txt"))
+        os.remove("./file_to_send.txt")
     for i in articles:
-
         # return f'Title: {i['title']} \n\n {i['description']}'
         message.append(i['title'].encode('ascii', 'replace').decode('utf-8'))
         message.append(i['description'].encode('ascii', 'replace').decode('utf-8'))
         with open(file="./file_to_send.txt", mode="a+") as file:
-            file.writelines(i['description'].encode('ascii', 'replace').decode('utf-8'))
+            file.writelines('Title: ')
+            file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')
+            file.writelines('Description: ')
+            file.writelines(f'{i['description'].encode('ascii', 'replace').decode('utf-8')} \n')
+
     # pd.set_option('display.max_colwidth', None)
     # print(pd.DataFrame(message))
     message_edit = ""
     # return '\n'.join(wrap(message, width=25))
-
     return message
 
 def send_email(message):
@@ -97,18 +103,26 @@ def check_variance(yesterday_low, day_before_low):
         if yesterday_low % day_before_low > yesterday_low * 0.05 :
             print("News, up by more than 5", day_before_low % yesterday_low, yesterday_low * 0.05)
             print(yesterday_low % day_before_low)
+            message = get_news()
+            print(message)
+            send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
         else:
             message = get_news()
             print(message)
             send_email(message='Subject: Tesla Stock News\n\n{}' .format(message))
 
     elif yesterday_low < day_before_low:
-        if day_before_low % yesterday_low:
+        print(day_before_low % yesterday_low, day_before_low * 0.05)
+        if day_before_low % yesterday_low > day_before_low * 0.05:
             print(day_before_low % yesterday_low)
             print("News, down by more than 5")
-            get_news()
+            message = get_news()
+            print(message)
+            send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
         else:
-            send_email(message=[day_before_low % yesterday_low, day_before_low * 0.05])
+            message = get_news()
+            print(message)
+            send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
 
 
 # unpack_api(values_list)
