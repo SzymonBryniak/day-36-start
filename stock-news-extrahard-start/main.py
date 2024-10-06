@@ -7,8 +7,13 @@ from twilio.rest import Client
 import smtplib
 import re
 from textwrapper import wrap
-today = datetime.date.today()
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
+
+
+
+today = datetime.date.today()
 yesterday = datetime.date.today() - datetime.timedelta(days=3)
 day_before_yesterday = today - datetime.timedelta(days=7)
 
@@ -93,10 +98,22 @@ def get_news():
     return
 
 def send_email(message):
+    sender_email = "szymonbryniakproject@gmail.com"
+    receiver_email = "oneplusszymonbryniak@gmail.com"
+    subject = "Test Email with Unicode Characters"
+    body = message
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))  
     with smtplib.SMTP("smtp.gmail.com") as connection:
         connection.starttls()
         connection.login(user=username, password=password)
-        connection.sendmail(from_addr=username, to_addrs="oneplusszymonbryniak@gmail.com", msg=str(message))
+        connection.sendmail(sender_email, receiver_email, msg.as_string())
+
 
 def check_variance(yesterday_low, day_before_low):
     if yesterday_low > day_before_low:
