@@ -5,11 +5,11 @@ import pandas as pd
 from pyexpat.errors import messages
 from twilio.rest import Client
 import smtplib
-
+from textwrapper import wrap
 today = datetime.date.today()
 
-yesterday = datetime.date.today() - datetime.timedelta(days=2)
-day_before_yesterday = today - datetime.timedelta(days=6)
+yesterday = datetime.date.today() - datetime.timedelta(days=3)
+day_before_yesterday = today - datetime.timedelta(days=7)
 
 STOCK = "AAPL"
 COMPANY_NAME = "Tesla Inc"
@@ -72,10 +72,18 @@ def get_news():
     articles = response_news.json()['articles']
     message = []
     for i in articles:
+
         # return f'Title: {i['title']} \n\n {i['description']}'
         message.append(i['title'].encode('ascii', 'replace').decode('utf-8'))
         message.append(i['description'].encode('ascii', 'replace').decode('utf-8'))
-    return str(message)
+        with open(file="./file_to_send.txt", mode="a+") as file:
+            file.writelines(i['description'].encode('ascii', 'replace').decode('utf-8'))
+    # pd.set_option('display.max_colwidth', None)
+    # print(pd.DataFrame(message))
+    message_edit = ""
+    # return '\n'.join(wrap(message, width=25))
+
+    return message
 
 def send_email(message):
     with smtplib.SMTP("smtp.gmail.com") as connection:
