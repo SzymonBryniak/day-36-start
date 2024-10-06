@@ -5,6 +5,7 @@ import pandas as pd
 from pyexpat.errors import messages
 from twilio.rest import Client
 import smtplib
+import re
 from textwrapper import wrap
 today = datetime.date.today()
 
@@ -71,25 +72,25 @@ def get_news():
     response_news = requests.get("https://newsapi.org/v2/everything", params=params_news)
     articles = response_news.json()['articles']
     message = []
-    from_file = ''
+    description_edit = ''
     if os.path.isfile("./file_to_send.txt"):
         print(os.path.isfile("./file_to_send.txt"))
         os.remove("./file_to_send.txt")
     for i in articles:
-        # return f'Title: {i['title']} \n\n {i['description']}'
-        message.append(i['title'].encode('ascii', 'replace').decode('utf-8'))
-        message.append(i['description'].encode('ascii', 'replace').decode('utf-8'))
-        with open(file="./file_to_send.txt", mode="a+") as file:
+        with open(file="./file_to_send.txt", mode="a+", encoding='utf-8') as file:  # Mime module to try
             file.writelines('Title: ')
+            # file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')
             file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')
             file.writelines('Description: ')
-            file.writelines(f'{i['description'].encode('ascii', 'replace').decode('utf-8')} \n')
+            description_edit = i['description']
+            new_description = re.sub('\n\n\n', "", description_edit)
+            file.writelines(f'{new_description.encode('ascii', 'replace').decode('utf-8')} \n\n')
 
     # pd.set_option('display.max_colwidth', None)
     # print(pd.DataFrame(message))
     message_edit = ""
     # return '\n'.join(wrap(message, width=25))
-    return message
+    return
 
 def send_email(message):
     with smtplib.SMTP("smtp.gmail.com") as connection:
@@ -103,25 +104,30 @@ def check_variance(yesterday_low, day_before_low):
         if yesterday_low % day_before_low > yesterday_low * 0.05 :
             print("News, up by more than 5", day_before_low % yesterday_low, yesterday_low * 0.05)
             print(yesterday_low % day_before_low)
-            message = get_news()
-            print(message)
+            get_news()
+            with open('./file_to_send.txt', encoding='utf-8') as file:
+                message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
         else:
-            message = get_news()
-            print(message)
-            send_email(message='Subject: Tesla Stock News\n\n{}' .format(message))
+            get_news()
+            with open('./file_to_send.txt', encoding='utf-8') as file:
+                message = file.read()
+            send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
+
 
     elif yesterday_low < day_before_low:
         print(day_before_low % yesterday_low, day_before_low * 0.05)
         if day_before_low % yesterday_low > day_before_low * 0.05:
             print(day_before_low % yesterday_low)
             print("News, down by more than 5")
-            message = get_news()
-            print(message)
+            get_news()
+            with open('./file_to_send.txt', encoding='utf-8') as file:
+                message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
         else:
-            message = get_news()
-            print(message)
+            get_news()
+            with open('./file_to_send.txt', encoding='utf-8') as file:
+                message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
 
 
