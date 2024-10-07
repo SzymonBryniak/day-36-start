@@ -11,11 +11,12 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 
-
+  # I didn't do the sms part of the challenge because twilio returns errors when I try to redeem my trial phone number.
+  # The value of the timedelta "day=" parameter must be adjusted to match the days when stocks data is available for otherwise a IndexError error is returned.
 
 today = datetime.date.today()
-yesterday = datetime.date.today() - datetime.timedelta(days=3)
-day_before_yesterday = today - datetime.timedelta(days=7)
+yesterday = datetime.date.today() - datetime.timedelta(days=4)
+day_before_yesterday = today - datetime.timedelta(days=8)
 
 STOCK = "AAPL"
 COMPANY_NAME = "Tesla Inc"
@@ -70,7 +71,6 @@ def get_news_dataframe():
         descriptions.append(i['description'])
     message = pd.DataFrame(descriptions)
     pd.set_option('display.max_colwidth', None)
-    # message.columns=[titles]
     return message.encode('utf-8')
 
 def get_news():
@@ -84,12 +84,12 @@ def get_news():
     for i in articles:
         with open(file="./file_to_send.txt", mode="a+", encoding='utf-8') as file:  # Mime module to try
             file.writelines('Title: ')
-            # file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')
-            file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')
+            # file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')  # a solution for parsing
+            file.writelines(f'{i['title']} \n')
             file.writelines('Description: ')
             description_edit = i['description']
             new_description = re.sub('\n\n\n', "", description_edit)
-            file.writelines(f'{new_description.encode('ascii', 'replace').decode('utf-8')} \n\n')
+            file.writelines(f'{new_description} \n\n')
 
     # pd.set_option('display.max_colwidth', None)
     # print(pd.DataFrame(message))
@@ -108,7 +108,7 @@ def send_email(message):
     msg['To'] = receiver_email
     msg['Subject'] = subject
 
-    msg.attach(MIMEText(body, 'plain', 'utf-8'))  
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
     with smtplib.SMTP("smtp.gmail.com") as connection:
         connection.starttls()
         connection.login(user=username, password=password)
