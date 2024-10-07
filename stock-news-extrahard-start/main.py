@@ -83,6 +83,7 @@ def get_news():
         os.remove("./file_to_send.txt")
     for i in articles:
         with open(file="./file_to_send.txt", mode="a+", encoding='utf-8') as file:  # Mime module to try
+            file.writelines(f'{STOCK} 🔺\n ')
             file.writelines('Title: ')
             # file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')  # a solution for parsing
             file.writelines(f'{i['title']} \n')
@@ -113,12 +114,12 @@ def send_email(message):
         connection.starttls()
         connection.login(user=username, password=password)
         connection.sendmail(sender_email, receiver_email, msg.as_string())
-
+print(response.json()['values'])
 
 def check_variance(yesterday_low, day_before_low):
     if yesterday_low > day_before_low:
-        print(yesterday_low % day_before_low, yesterday_low * 0.05)
-        if yesterday_low % day_before_low > yesterday_low * 0.05 :
+        print(yesterday_low % day_before_low, day_before_low * 0.05)
+        if yesterday_low % day_before_low > day_before_low * 0.05 :
             print("News, up by more than 5", day_before_low % yesterday_low, yesterday_low * 0.05)
             print(yesterday_low % day_before_low)
             get_news()
@@ -137,6 +138,7 @@ def check_variance(yesterday_low, day_before_low):
         if day_before_low % yesterday_low > day_before_low * 0.05:
             print(day_before_low % yesterday_low)
             print("News, down by more than 5")
+            get_news()
             get_news()
             with open('./file_to_send.txt', encoding='utf-8') as file:
                 message = file.read()
