@@ -73,7 +73,7 @@ def get_news_dataframe():
     pd.set_option('display.max_colwidth', None)
     return message.encode('utf-8')
 
-def get_news():
+def get_news(percentage, string):
     response_news = requests.get("https://newsapi.org/v2/everything", params=params_news)
     articles = response_news.json()['articles']
     message = []
@@ -83,14 +83,18 @@ def get_news():
         os.remove("./file_to_send.txt")
     for i in articles:
         with open(file="./file_to_send.txt", mode="a+", encoding='utf-8') as file:  # Mime module to try
-            file.writelines(f'{STOCK} 🔺\n ')
+            file.writelines(f'{STOCK} {string}{round(percentage, 2)}\n ')
             file.writelines('Title: ')
             # file.writelines(f'{i['title'].encode('ascii', 'replace').decode('utf-8')} \n')  # a solution for parsing
             file.writelines(f'{i['title']} \n')
             file.writelines('Description: ')
             description_edit = i['description']
-            new_description = re.sub('\n\n\n', "", description_edit)
-            file.writelines(f'{new_description} \n\n')
+            try:
+                new_description = re.sub('\n\n\n', "", description_edit)
+            except TypeError:
+                pass
+            finally:
+                file.writelines(f'{new_description} \n\n')
 
     # pd.set_option('display.max_colwidth', None)
     # print(pd.DataFrame(message))
@@ -118,33 +122,36 @@ print(response.json()['values'])
 
 def check_variance(yesterday_low, day_before_low):
     if yesterday_low > day_before_low:
+        print("increase")
+        percent = (yesterday_low - day_before_low) / day_before_low * 100
         print(yesterday_low % day_before_low, day_before_low * 0.05)
         if yesterday_low % day_before_low > day_before_low * 0.05 :
             print("News, up by more than 5", day_before_low % yesterday_low, yesterday_low * 0.05)
             print(yesterday_low % day_before_low)
-            get_news()
+            get_news(percent,"🔺")
             with open('./file_to_send.txt', encoding='utf-8') as file:
                 message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
         else:
-            get_news()
+            get_news(percent,"🔺")
             with open('./file_to_send.txt', encoding='utf-8') as file:
                 message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
 
 
     elif yesterday_low < day_before_low:
+        print("decrease")
         print(day_before_low % yesterday_low, day_before_low * 0.05)
+        percent = (yesterday_low - day_before_low) / day_before_low * 100
         if day_before_low % yesterday_low > day_before_low * 0.05:
             print(day_before_low % yesterday_low)
             print("News, down by more than 5")
-            get_news()
-            get_news()
+            get_news(percent,"🔻")
             with open('./file_to_send.txt', encoding='utf-8') as file:
                 message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
         else:
-            get_news()
+            get_news(percent,"🔻")
             with open('./file_to_send.txt', encoding='utf-8') as file:
                 message = file.read()
             send_email(message='Subject: Tesla Stock News\n\n{}'.format(message))
